@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>Currency Radar</title>
+
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+
+  <body>
+    <main class="container">
+      <header class="header">
+        <div>
+          <h1>Currency Radar</h1>
+
+          <p>Análise de câmbio</p>
+        </div>
+      </header>
+
+      <!-- ABAS -->
+
+      <nav class="tabs">
+        <button
+          class="tab active"
+          data-tab="radar"
+          data-currency="EUR"
+          title="Euro"
+        >
+          🇪🇺
+        </button>
+
+        <button class="tab" data-tab="radar" data-currency="USD" title="Dólar">
+          🇺🇸
+        </button>
+
+        <button class="tab" data-tab="calculator" title="Calculadora">
+          🧮
+        </button>
+      </nav>
+
+      <!-- ========================= -->
+      <!-- RADAR                     -->
+      <!-- ========================= -->
+
+      <section id="radar-view">
+        <!-- STATUS -->
+
+        <section id="status" class="status">Inicializando...</section>
+
+        <!-- MOEDA -->
+
+        <section class="currency-card">
+          <div class="currency-header">
+            <span id="currency-flag" class="currency-flag"> 🇪🇺 </span>
+
+            <div>
+              <h2 id="currency-name">Euro</h2>
+
+              <span id="currency-pair"> EUR / BRL </span>
+            </div>
+          </div>
+
+          <!-- COTAÇÃO ATUAL -->
+
+          <div class="current-rate">
+            <span class="label"> Cotação atual </span>
+
+            <div class="rate-line">
+              <strong id="currency-rate"> -- </strong>
+
+              <span id="currency-today-change" class="today-change"> -- </span>
+            </div>
+          </div>
+
+          <!-- ESTATÍSTICAS -->
+
+          <div class="analysis main-stats">
+            <div>
+              <span>Média 6 meses</span>
+              <strong id="currency-average"> -- </strong>
+            </div>
+
+            <div>
+              <span>Mediana</span>
+              <strong id="currency-median"> -- </strong>
+            </div>
+
+            <div>
+              <span>Mínimo</span>
+              <strong id="currency-min"> -- </strong>
+            </div>
+
+            <div>
+              <span>Máximo</span>
+              <strong id="currency-max"> -- </strong>
+            </div>
+          </div>
+
+          <!-- PERCENTIS -->
+
+          <div class="percentiles">
+            <div class="percentile-title">Distribuição dos últimos 6 meses</div>
+
+            <div class="percentile-values">
+              <div>
+                <span>P10</span>
+                <strong id="currency-p10"> -- </strong>
+              </div>
+
+              <div>
+                <span>P25</span>
+                <strong id="currency-p25"> -- </strong>
+              </div>
+
+              <div class="percentile-highlight">
+                <span>P50</span>
+                <strong id="currency-p50"> -- </strong>
+              </div>
+
+              <div>
+                <span>P75</span>
+                <strong id="currency-p75"> -- </strong>
+              </div>
+
+              <div>
+                <span>P90</span>
+                <strong id="currency-p90"> -- </strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- TENDÊNCIA -->
+
+          <div class="trend">
+            <div class="trend-title">Tendência histórica</div>
+
+            <div id="currency-trend-label" class="trend-label">
+              Analisando...
+            </div>
+
+            <div class="trend-values">
+              <div>
+                <span>7 dias</span>
+                <strong id="currency-trend-7d"> -- </strong>
+              </div>
+
+              <div>
+                <span>30 dias</span>
+                <strong id="currency-trend-30d"> -- </strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- DECISÃO SUGERIDA -->
+
+          <div class="decision-section">
+            <div class="decision-title">Decisão sugerida</div>
+
+            <div id="currency-opportunity" class="opportunity">
+              Análise carregada
+            </div>
+          </div>
+        </section>
+      </section>
+
+      <!-- ========================= -->
+      <!-- CALCULADORA               -->
+      <!-- ========================= -->
+
+      <section id="calculator-view" class="calculator-view" hidden>
+        <div class="calculator-card">
+          <div class="calculator-title">Conversor</div>
+
+          <div class="calculator-subtitle">
+            Cotação de mercado em tempo real
+          </div>
+
+          <!-- VALOR -->
+
+          <input
+            id="calculator-amount"
+            class="calculator-amount"
+            type="number"
+            inputmode="decimal"
+            value="1000"
+            min="0"
+            step="0.01"
+            placeholder="Digite um valor"
+          />
+
+          <!-- PAR -->
+
+          <div class="calculator-pair">
+            <button id="calculator-from" class="currency-select" type="button">
+              🇧🇷 BRL
+            </button>
+
+            <button
+              id="calculator-swap"
+              class="swap-button"
+              type="button"
+              title="Inverter moedas"
+            >
+              ↔
+            </button>
+
+            <button id="calculator-to" class="currency-select" type="button">
+              🇪🇺 EUR
+            </button>
+          </div>
+
+          <!-- RESULTADO -->
+
+          <div class="calculator-result">
+            <span id="calculator-result"> -- </span>
+          </div>
+
+          <!-- COTAÇÃO -->
+
+          <div id="calculator-rate" class="calculator-rate">Cotação: --</div>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>
