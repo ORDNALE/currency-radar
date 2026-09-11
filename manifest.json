@@ -5,7 +5,8 @@
   "description": "Analisa o histórico de câmbio e indica oportunidades de compra.",
   "permissions": [
     "storage",
-    "alarms"
+    "alarms",
+    "notifications"
   ],
   "action": {
     "default_title": "Currency Radar",

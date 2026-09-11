@@ -1046,10 +1046,10 @@ export function analyzeDecision(
       icon: "🟢",
 
       action:
-        "CONSIDERAR COMPRA",
+        "BOA HORA PARA COMPRAR",
 
       detail:
-        "Preço abaixo do P25 dos últimos 6 meses"
+        "Entre os 25% mais baratos dos últimos 6 meses"
 
     };
 
@@ -1071,10 +1071,10 @@ export function analyzeDecision(
       icon: "🟡",
 
       action:
-        "CONSIDERAR COMPRA PARCIAL",
+        "MOMENTO FAVORÁVEL",
 
       detail:
-        "Preço entre P25 e P50 dos últimos 6 meses"
+        "Abaixo da mediana histórica dos últimos 6 meses"
 
     };
 
@@ -1096,10 +1096,10 @@ export function analyzeDecision(
       icon: "🟠",
 
       action:
-        "ACOMPANHAR",
+        "AGUARDA UM POUCO",
 
       detail:
-        "Preço entre P50 e P75 dos últimos 6 meses"
+        "Acima da mediana dos últimos 6 meses"
 
     };
 
@@ -1121,10 +1121,10 @@ export function analyzeDecision(
       icon: "🔴",
 
       action:
-        "AGUARDAR",
+        "PREÇO ALTO — ESPERA",
 
       detail:
-        "Preço entre P75 e P90 dos últimos 6 meses"
+        "Entre os 25% mais caros dos últimos 6 meses"
 
     };
 
@@ -1142,10 +1142,10 @@ export function analyzeDecision(
     icon: "🔴",
 
     action:
-      "AGUARDAR",
+      "PREÇO MUITO ALTO",
 
     detail:
-      "Preço acima do P90 dos últimos 6 meses"
+      "Entre os 10% mais caros dos últimos 6 meses"
 
   };
 

@@ -337,7 +337,374 @@ body {
   font-weight: bold;
 }
 
+/* ========================= */
+/* DECISÃO — COR POR ZONA   */
+/* ========================= */
+
+.opportunity.zone-very-favorable {
+  background: #d4edda;
+  color: #155724;
+}
+
+.opportunity.zone-favorable {
+  background: #fff9db;
+  color: #5f4600;
+}
+
+.opportunity.zone-normal {
+  background: #ffe8cc;
+  color: #7a3500;
+}
+
+.opportunity.zone-expensive {
+  background: #fde8e8;
+  color: #7b1d1d;
+}
+
+.opportunity.zone-very-expensive {
+  background: #fde8e8;
+  color: #7b1d1d;
+}
+
+/* ========================= */
+/* ALERTA DE PREÇO           */
+/* ========================= */
+
+.alert-section {
+  margin-top: 9px;
+
+  padding: 12px 14px;
+
+  background: white;
+
+  border-radius: 10px;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.alert-row-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 6px;
+
+  font-size: 11px;
+  font-weight: bold;
+  color: #444;
+}
+
+.alert-hint {
+  font-size: 10px;
+  color: #777;
+
+  margin-bottom: 7px;
+}
+
+.alert-prev-trigger {
+  margin-bottom: 6px;
+
+  padding: 4px 7px;
+
+  border-radius: 5px;
+
+  background: #f0f4ff;
+
+  font-size: 10px;
+  color: #555;
+}
+
+.alert-input-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.alert-prefix {
+  font-size: 12px;
+  font-weight: bold;
+  color: #555;
+}
+
+.alert-price-input {
+  flex: 1;
+
+  padding: 6px 8px;
+
+  border: 1px solid #ddd;
+  border-radius: 6px;
+
+  font-size: 13px;
+
+  outline: none;
+}
+
+.alert-price-input:focus {
+  border-color: #0057ff;
+}
+
+.alert-btn-save {
+  padding: 6px 12px;
+
+  background: #0057ff;
+  color: white;
+
+  border: none;
+  border-radius: 6px;
+
+  font-size: 12px;
+  font-weight: bold;
+
+  cursor: pointer;
+}
+
+.alert-btn-save:hover {
+  background: #0044cc;
+}
+
+.alert-btn-remove {
+  padding: 3px 8px;
+
+  background: transparent;
+
+  border: 1px solid #ccc;
+  border-radius: 5px;
+
+  font-size: 10px;
+  color: #888;
+
+  cursor: pointer;
+}
+
+.alert-btn-remove:hover {
+  border-color: #e00;
+  color: #e00;
+}
+
+.alert-active-text {
+  font-size: 12px;
+  font-weight: bold;
+  color: #0057ff;
+}
+
+.alert-proximity-info {
+  margin-top: 5px;
+
+  font-size: 10px;
+  color: #888;
+}
+
+.alert-btn-check {
+  display: block;
+
+  width: 100%;
+
+  margin-top: 8px;
+  padding: 5px;
+
+  background: transparent;
+
+  border: 1px solid #0057ff;
+  border-radius: 6px;
+
+  font-size: 10px;
+  color: #0057ff;
+
+  cursor: pointer;
+}
+
+.alert-btn-check:hover {
+  background: #f0f4ff;
+}
+
+.alert-btn-check:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* ========================= */
+/* CALCULADORA               */
+/* ========================= */
+
+.calculator-card {
+  padding: 14px 15px 15px;
+
+  background: white;
+
+  border-radius: 10px;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* GRÁFICO */
+
+.chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  margin-bottom: 8px;
+}
+
+.chart-pair-label {
+  font-size: 12px;
+  font-weight: bold;
+  color: #444;
+}
+
+.chart-periods {
+  display: flex;
+  gap: 3px;
+}
+
+.period-btn {
+  padding: 2px 7px;
+
+  border: 1px solid #ddd;
+  border-radius: 4px;
+
+  background: transparent;
+
+  font-size: 10px;
+  color: #888;
+
+  cursor: pointer;
+}
+
+.period-btn.active {
+  border-color: #0057ff;
+
+  color: #0057ff;
+
+  background: #f0f4ff;
+
+  font-weight: bold;
+}
+
+.rate-chart {
+  width: 100%;
+
+  display: block;
+
+  cursor: crosshair;
+}
+
+.calculator-divider {
+  height: 1px;
+
+  background: #eee;
+
+  margin: 13px 0;
+}
+
+/* CONVERSOR */
+
+.calculator-title {
+  font-size: 13px;
+  font-weight: bold;
+
+  margin-bottom: 2px;
+}
+
+.calculator-subtitle {
+  font-size: 10px;
+  color: #888;
+
+  margin-bottom: 10px;
+}
+
+.calculator-amount {
+  width: 100%;
+
+  padding: 9px 11px;
+
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  font-size: 16px;
+  font-weight: bold;
+
+  outline: none;
+
+  margin-bottom: 8px;
+}
+
+.calculator-amount:focus {
+  border-color: #0057ff;
+}
+
+.calculator-pair {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  margin-bottom: 10px;
+}
+
+.currency-select {
+  flex: 1;
+
+  padding: 8px;
+
+  border: 1px solid #ddd;
+  border-radius: 8px;
+
+  background: #f8f8f8;
+
+  font-size: 13px;
+  font-weight: bold;
+
+  cursor: pointer;
+
+  text-align: center;
+}
+
+.currency-select:hover {
+  background: #f0f0f0;
+}
+
+.swap-button {
+  width: 36px;
+  height: 36px;
+
+  border: 1px solid #ddd;
+  border-radius: 50%;
+
+  background: white;
+
+  font-size: 16px;
+
+  cursor: pointer;
+
+  flex-shrink: 0;
+}
+
+.swap-button:hover {
+  background: #f0f0f0;
+}
+
+.calculator-result {
+  text-align: center;
+
+  margin-bottom: 5px;
+}
+
+#calculator-result {
+  font-size: 24px;
+  font-weight: bold;
+  color: #222;
+}
+
+.calculator-rate {
+  text-align: center;
+
+  font-size: 11px;
+  color: #888;
+}
+
+/* ========================= */
 /* COTAÇÃO + VARIAÇÃO DO DIA */
+/* ========================= */
 
 .rate-line {
   display: flex;

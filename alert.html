@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>🔔 Alerta — Currency Radar</title>
+    <style>
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+
+      @keyframes flash-bg {
+        0%, 100% { background: var(--bg-base); }
+        50%       { background: var(--bg-flash); }
+      }
+
+      @keyframes card-pulse {
+        0%, 100% { transform: scale(1);    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12); }
+        50%       { transform: scale(1.03); box-shadow: 0 14px 44px rgba(0, 0, 0, 0.22); }
+      }
+
+      :root {
+        --bg-base:   #f5fff9;
+        --bg-flash:  #69f0ae;
+        --accent:    #00aa44;
+      }
+
+      body {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: Arial, sans-serif;
+        animation: flash-bg 1.2s ease-in-out infinite;
+      }
+
+      .card {
+        background: white;
+        border-radius: 20px;
+        padding: 48px 56px;
+        text-align: center;
+        max-width: 420px;
+        width: 90vw;
+        animation: card-pulse 1.2s ease-in-out infinite;
+      }
+
+      .icon    { font-size: 56px; margin-bottom: 14px; }
+
+      .pair    {
+        font-size: 11px;
+        color: #aaa;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        margin-bottom: 8px;
+      }
+
+      .rate    {
+        font-size: 46px;
+        font-weight: bold;
+        color: var(--accent);
+        margin-bottom: 12px;
+      }
+
+      .message {
+        font-size: 14px;
+        color: #555;
+        line-height: 1.6;
+        margin-bottom: 36px;
+      }
+
+      .close-btn {
+        padding: 13px 52px;
+        background: var(--accent);
+        color: white;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .close-btn:hover { opacity: 0.88; }
+    </style>
+  </head>
+
+  <body>
+    <div class="card">
+      <div class="icon"    id="alert-icon"></div>
+      <div class="pair"    id="alert-pair"></div>
+      <div class="rate"    id="alert-rate"></div>
+      <div class="message" id="alert-message"></div>
+      <button class="close-btn" id="close-btn">Entendido</button>
+    </div>
+
+    <script src="alert.js"></script>
+  </body>
+</html>

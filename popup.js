@@ -482,7 +482,13 @@ async function loadCurrency() {
           opportunity
         );
 
+      opportunityElement.className =
+        `opportunity zone-${decision.historicalZone}`;
+
     }
+
+
+    updateAlertUI(selectedCurrency);
 
 
     /*
@@ -593,10 +599,15 @@ async function loadCurrency() {
 
     if (opportunityElement) {
 
+      opportunityElement.className =
+        "opportunity";
+
       opportunityElement.textContent =
         "Análise indisponível";
 
     }
+
+    updateAlertUI(selectedCurrency);
 
   }
 
@@ -685,7 +696,7 @@ function selectTab(tab) {
      * quando a aba é aberta.
      */
     import(
-      "./calculator/calculator.js"
+      "./services/calculator/calculator.js"
     )
       .then(module => {
 
@@ -744,6 +755,222 @@ function selectTab(tab) {
 
 
 /**
+ * Atualiza a UI do alerta para a moeda atual.
+ */
+async function updateAlertUI(currency) {
+
+  const storage =
+    await chrome.storage.local.get(["alerts"]);
+
+  const alerts = storage.alerts || {};
+  const alert = alerts[currency];
+
+
+  const form =
+    document.getElementById("alert-form");
+
+  const active =
+    document.getElementById("alert-active");
+
+  const pairEl =
+    document.getElementById("alert-pair");
+
+  const activeText =
+    document.getElementById("alert-active-text");
+
+  const prevTrigger =
+    document.getElementById("alert-prev-trigger");
+
+
+  if (!form || !active) {
+    return;
+  }
+
+
+  if (pairEl) {
+    pairEl.textContent = `${currency}/BRL`;
+  }
+
+
+  const proximityInfo =
+    document.getElementById("alert-proximity-info");
+
+
+  if (alert?.active) {
+
+    form.hidden = true;
+    active.hidden = false;
+
+    if (activeText) {
+      activeText.textContent =
+        `${currency}/BRL abaixo de ` +
+        `R$ ${alert.targetPrice.toFixed(2)}`;
+    }
+
+
+    if (proximityInfo) {
+
+      if (alert.proximityNotifiedAt) {
+
+        const date =
+          new Date(
+            alert.proximityNotifiedAt
+          ).toLocaleDateString("pt-BR");
+
+        proximityInfo.textContent =
+          `🟡 Aviso de proximidade enviado em ${date} ` +
+          `(R$ ${Number(alert.proximityRate).toFixed(4)})`;
+
+        proximityInfo.hidden = false;
+
+      } else {
+
+        proximityInfo.hidden = true;
+
+      }
+
+    }
+
+
+  } else {
+
+    form.hidden = false;
+    active.hidden = true;
+
+
+    if (prevTrigger) {
+
+      if (alert?.triggeredAt) {
+
+        const date =
+          new Date(
+            alert.triggeredAt
+          ).toLocaleDateString("pt-BR");
+
+        prevTrigger.textContent =
+          `Último alerta disparou em ${date} ` +
+          `(R$ ${Number(alert.triggeredRate).toFixed(4)})`;
+
+        prevTrigger.hidden = false;
+
+      } else {
+
+        prevTrigger.hidden = true;
+
+      }
+
+    }
+
+    /*
+     * Limpa o input ao trocar de moeda.
+     */
+    const priceInput =
+      document.getElementById("alert-price");
+
+    if (priceInput) {
+      priceInput.value = "";
+    }
+
+  }
+
+}
+
+
+/**
+ * Inicializa os event listeners da seção de alertas.
+ */
+function initAlertListeners() {
+
+  const saveBtn =
+    document.getElementById("alert-save");
+
+  const removeBtn =
+    document.getElementById("alert-remove");
+
+  const priceInput =
+    document.getElementById("alert-price");
+
+
+  if (!saveBtn || !removeBtn || !priceInput) {
+    return;
+  }
+
+
+  saveBtn.addEventListener("click", async () => {
+
+    const price = Number(priceInput.value);
+
+    if (!Number.isFinite(price) || price <= 0) {
+      priceInput.focus();
+      return;
+    }
+
+
+    const storage =
+      await chrome.storage.local.get(["alerts"]);
+
+    const alerts = storage.alerts || {};
+
+    alerts[selectedCurrency] = {
+      active: true,
+      targetPrice: price,
+      createdAt: new Date().toISOString()
+    };
+
+    await chrome.storage.local.set({ alerts });
+
+    await updateAlertUI(selectedCurrency);
+
+  });
+
+
+  removeBtn.addEventListener("click", async () => {
+
+    const storage =
+      await chrome.storage.local.get(["alerts"]);
+
+    const alerts = storage.alerts || {};
+
+    delete alerts[selectedCurrency];
+
+    await chrome.storage.local.set({ alerts });
+
+    await updateAlertUI(selectedCurrency);
+
+  });
+
+
+  const checkBtn =
+    document.getElementById("alert-check-now");
+
+  if (checkBtn) {
+
+    checkBtn.addEventListener("click", () => {
+
+      checkBtn.textContent = "Verificando...";
+      checkBtn.disabled = true;
+
+
+      chrome.runtime.sendMessage(
+        { type: "checkNow" },
+        async () => {
+
+          await updateAlertUI(selectedCurrency);
+
+          checkBtn.textContent = "Verificar agora";
+          checkBtn.disabled = false;
+
+        }
+      );
+
+    });
+
+  }
+
+}
+
+
+/**
  * Eventos das abas.
  */
 document
@@ -772,5 +999,7 @@ document
  * Inicialização.
  */
 updateCurrencyHeader();
+
+initAlertListeners();
 
 loadCurrency();

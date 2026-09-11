@@ -164,6 +164,68 @@
             </div>
           </div>
         </section>
+
+        <!-- ALERTA DE PREÇO -->
+
+        <section class="alert-section">
+
+          <!-- estado: inativo / disparado anteriormente -->
+
+          <div id="alert-form">
+            <div class="alert-row-title">🔔 Alerta de preço</div>
+
+            <div class="alert-hint">
+              Avisa quando
+              <span id="alert-pair">EUR/BRL</span>
+              cair abaixo de:
+            </div>
+
+            <div id="alert-prev-trigger" class="alert-prev-trigger" hidden></div>
+
+            <div class="alert-input-row">
+              <span class="alert-prefix">R$</span>
+
+              <input
+                id="alert-price"
+                class="alert-price-input"
+                type="number"
+                step="0.01"
+                min="0"
+                placeholder="0,00"
+              />
+
+              <button id="alert-save" class="alert-btn-save">
+                Ativar
+              </button>
+            </div>
+          </div>
+
+          <!-- estado: ativo -->
+
+          <div id="alert-active" hidden>
+            <div class="alert-row-title">
+              🔔 Alerta ativo
+
+              <button id="alert-remove" class="alert-btn-remove">
+                Remover
+              </button>
+            </div>
+
+            <div id="alert-active-text" class="alert-active-text"></div>
+
+            <div
+              id="alert-proximity-info"
+              class="alert-proximity-info"
+              hidden
+            ></div>
+
+            <button id="alert-check-now" class="alert-btn-check">
+              Verificar agora
+            </button>
+          </div>
+
+        </section>
+
       </section>
 
       <!-- ========================= -->
@@ -172,6 +234,25 @@
 
       <section id="calculator-view" class="calculator-view" hidden>
         <div class="calculator-card">
+
+          <!-- GRÁFICO -->
+
+          <div class="chart-header">
+            <span id="chart-pair-label" class="chart-pair-label">EUR / BRL</span>
+
+            <div class="chart-periods">
+              <button class="period-btn active" data-period="1">1M</button>
+              <button class="period-btn" data-period="3">3M</button>
+              <button class="period-btn" data-period="6">6M</button>
+            </div>
+          </div>
+
+          <canvas id="rate-chart" class="rate-chart"></canvas>
+
+          <div class="calculator-divider"></div>
+
+          <!-- CONVERSÃO -->
+
           <div class="calculator-title">Conversor</div>
 
           <div class="calculator-subtitle">
@@ -215,12 +296,13 @@
           <!-- RESULTADO -->
 
           <div class="calculator-result">
-            <span id="calculator-result"> -- </span>
+            <span id="calculator-result">--</span>
           </div>
 
           <!-- COTAÇÃO -->
 
           <div id="calculator-rate" class="calculator-rate">Cotação: --</div>
+
         </div>
       </section>
     </main>
