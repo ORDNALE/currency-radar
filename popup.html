@@ -75,92 +75,76 @@
             </div>
           </div>
 
-          <!-- ESTATÍSTICAS -->
+          <!-- MÍNIMA E MÁXIMA POR PERÍODO -->
 
-          <div class="analysis main-stats">
-            <div>
-              <span>Média 6 meses</span>
-              <strong id="currency-average"> -- </strong>
-            </div>
+          <div class="ranges">
+            <span></span>
+            <span class="ranges-head">Mais baixa</span>
+            <span class="ranges-head">Mais alta</span>
 
-            <div>
-              <span>Mediana</span>
-              <strong id="currency-median"> -- </strong>
-            </div>
+            <span class="ranges-label">1 mês</span>
+            <strong class="ranges-value" id="range-month-min"> -- </strong>
+            <strong class="ranges-value" id="range-month-max"> -- </strong>
 
-            <div>
-              <span>Mínimo</span>
-              <strong id="currency-min"> -- </strong>
-            </div>
-
-            <div>
-              <span>Máximo</span>
-              <strong id="currency-max"> -- </strong>
-            </div>
+            <span class="ranges-label">6 meses</span>
+            <strong class="ranges-value" id="range-six-min"> -- </strong>
+            <strong class="ranges-value" id="range-six-max"> -- </strong>
           </div>
 
-          <!-- PERCENTIS -->
+          <!-- DOIS MOTORES DE ANÁLISE -->
 
-          <div class="percentiles">
-            <div class="percentile-title">Distribuição dos últimos 6 meses</div>
+          <div class="engines-section">
+            <div class="engines-title">Análise</div>
 
-            <div class="percentile-values">
-              <div>
-                <span>P10</span>
-                <strong id="currency-p10"> -- </strong>
+            <div id="engines-row" class="engines-row">
+              <!-- MOTOR 1 — HISTÓRICO -->
+
+              <div class="engine-block">
+                <div class="engine-label">Onde está hoje</div>
+
+                <div id="currency-opportunity" class="opportunity">
+                  Carregando...
+                </div>
               </div>
 
-              <div>
-                <span>P25</span>
-                <strong id="currency-p25"> -- </strong>
-              </div>
+              <!-- MOTOR 2 — PREVISÃO -->
 
-              <div class="percentile-highlight">
-                <span>P50</span>
-                <strong id="currency-p50"> -- </strong>
-              </div>
+              <div id="forecast-block" class="engine-block">
+                <div class="engine-label">Para onde aponta</div>
 
-              <div>
-                <span>P75</span>
-                <strong id="currency-p75"> -- </strong>
-              </div>
+                <div id="forecast-card" class="forecast-card">
+                  <span id="forecast-label" class="forecast-label">
+                    Carregando...
+                  </span>
 
-              <div>
-                <span>P90</span>
-                <strong id="currency-p90"> -- </strong>
-              </div>
-            </div>
-          </div>
+                  <span id="forecast-rate" class="forecast-rate"></span>
 
-          <!-- TENDÊNCIA -->
-
-          <div class="trend">
-            <div class="trend-title">Tendência histórica</div>
-
-            <div id="currency-trend-label" class="trend-label">
-              Analisando...
-            </div>
-
-            <div class="trend-values">
-              <div>
-                <span>7 dias</span>
-                <strong id="currency-trend-7d"> -- </strong>
-              </div>
-
-              <div>
-                <span>30 dias</span>
-                <strong id="currency-trend-30d"> -- </strong>
+                  <span
+                    id="forecast-confidence"
+                    class="forecast-confidence"
+                  ></span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- DECISÃO SUGERIDA -->
+            <!-- VEREDITO COMBINADO -->
 
-          <div class="decision-section">
-            <div class="decision-title">Decisão sugerida</div>
+            <div id="combined-signal" class="combined-signal">
+              Cruzando as análises...
+            </div>
 
-            <div id="currency-opportunity" class="opportunity">
-              Análise carregada
+            <!-- CONSENSO DE MERCADO (FOCUS / BCB) -->
+
+            <div id="focus-block" class="focus-block" hidden>
+              <div class="focus-title">
+                📊 Consenso do mercado
+                <span class="focus-source">Focus / Banco Central</span>
+              </div>
+
+              <div id="focus-main" class="focus-main"></div>
+
+              <div id="focus-detail" class="focus-detail"></div>
+
             </div>
           </div>
         </section>
@@ -198,6 +182,8 @@
                 Ativar
               </button>
             </div>
+
+            <button id="alert-suggest" class="alert-suggest" hidden></button>
           </div>
 
           <!-- estado: ativo -->

@@ -136,6 +136,151 @@ export function calculateStatistics(history) {
 
 
 /**
+ * Mínima e máxima por período.
+ *
+ * O recorte de 1 mês é por data real, não por
+ * contagem de observações: o PTAX só tem dias
+ * úteis, então "os últimos 30 registros" seriam
+ * quase sete semanas de calendário.
+ */
+export function calculateRanges(history) {
+
+  const valid =
+    history
+      .filter(item =>
+        item &&
+        typeof item.date === "string" &&
+        typeof item.rate === "number" &&
+        Number.isFinite(item.rate) &&
+        item.rate > 0
+      )
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date)
+      );
+
+
+  if (valid.length === 0) {
+    return null;
+  }
+
+
+  const latest =
+    parseDate(
+      valid[valid.length - 1].date
+    );
+
+
+  const monthStart =
+    new Date(latest);
+
+  monthStart.setDate(
+    monthStart.getDate() - 30
+  );
+
+
+  const monthCutoff =
+    formatDate(monthStart);
+
+
+  const monthRows =
+    valid.filter(
+      item => item.date >= monthCutoff
+    );
+
+
+  function rangeOf(rows) {
+
+    if (rows.length === 0) {
+      return null;
+    }
+
+    let min = rows[0].rate;
+    let max = rows[0].rate;
+
+    for (const item of rows) {
+
+      if (item.rate < min) {
+        min = item.rate;
+      }
+
+      if (item.rate > max) {
+        max = item.rate;
+      }
+
+    }
+
+    return { min, max, count: rows.length };
+
+  }
+
+
+  return {
+
+    month:
+      rangeOf(monthRows),
+
+    sixMonths:
+      rangeOf(valid)
+
+  };
+
+}
+
+
+/*
+ * Desconto do alvo sugerido para o alerta.
+ *
+ * Backtest de 4 anos de PTAX, medindo com que
+ * frequência o alvo era atingido e quanto desconto
+ * entregava. Duas regras baseadas em percentil
+ * foram testadas e descartadas:
+ *
+ * - P25 do semestre: atingido em só 48% das vezes em
+ *   30 dias (EUR), e podia cair abaixo da mínima do
+ *   mês — pedia para esperar um preço que sumiu.
+ *
+ * - P10 do mês: pior ainda nas bordas. Com o preço já
+ *   na parte baixa do mês, o desconto colapsava para
+ *   0,3%; e o desconto mínimo medido foi -1,55%, ou
+ *   seja, às vezes sugeria um alvo ACIMA do preço de
+ *   hoje. O usuário só alerta para baixo — alvo
+ *   invertido é sugestão sem sentido.
+ *
+ * Um desconto fixo sobre a cotação de hoje não tem
+ * esse problema: nunca inverte e nunca degenera.
+ * 1% é atingido em 67% (EUR) e 70% (USD) das vezes
+ * em 30 dias. 1,5% derruba para 56% e 59%.
+ */
+const SUGGESTED_DISCOUNT = 0.01;
+
+
+/**
+ * Preço-alvo sugerido para o alerta de queda.
+ */
+export function suggestAlertTarget(currentRate) {
+
+  if (
+    !Number.isFinite(currentRate) ||
+    currentRate <= 0
+  ) {
+    return null;
+  }
+
+  return {
+
+    price:
+      currentRate * (1 - SUGGESTED_DISCOUNT),
+
+    discountPercent:
+      SUGGESTED_DISCOUNT * 100
+
+  };
+
+}
+
+
+/**
  * Converte YYYY-MM-DD para Date.
  */
 function parseDate(dateString) {
@@ -928,6 +1073,601 @@ export function analyzeRadar(
   };
 
 }
+
+/*
+ * Janelas do motor de previsão.
+ *
+ * A longa define a tendência de fundo.
+ * A curta existe só para detectar quando
+ * essa tendência está virando.
+ *
+ * SHORT_WINDOW abaixo de 15 passa a acusar
+ * direção em série lateral ruidosa — ou seja,
+ * inventa sinal onde só há oscilação.
+ */
+const LONG_WINDOW  = 60;
+const SHORT_WINDOW = 15;
+
+/*
+ * Variação projetada menor que isso não é
+ * direção, é ruído.
+ */
+const NEUTRAL_THRESHOLD = 1.5;
+
+/*
+ * R² mínimo para acreditar na reta.
+ *
+ * Estes dois números foram calibrados contra
+ * passeios aleatórios — séries sem tendência
+ * por construção, que é o mais parecido com
+ * câmbio real. Com 0.35 / 0.8% o motor afirmava
+ * direção em 32% deles (97 de 300): invenção
+ * pura. Com 0.55 / 1.5% cai para 19%, e ainda
+ * detecta 117 de 120 tendências reais.
+ *
+ * Afrouxar estes valores volta a gerar sinal
+ * onde não há; apertar mais (2.5%) derruba a
+ * detecção real para 68% e não compensa.
+ */
+const MIN_R2 = 0.55;
+
+/*
+ * Quebra estrutural: quantos erros-padrão o
+ * último preço pode fugir da reta antes de a
+ * reta ser considerada inválida.
+ *
+ * Uma queda brusca é o evento mais informativo
+ * da série, mas a regressão a trata como 1 ponto
+ * entre 60 — media a reta continuava dizendo
+ * "tende a subir" no dia seguinte a um tombo de
+ * 5%, justo quando o motor histórico já gritava
+ * para comprar.
+ *
+ * Medido: no dia da quebra o desvio é 7,2 e cai
+ * para 4,0 no terceiro dia; séries normais ficam
+ * em 1,3 em média e o pior passeio aleatório
+ * chegou a 3,21. Daí 3,5.
+ */
+const MAX_DEVIATION = 3.5;
+
+
+/**
+ * Ajusta uma reta por mínimos quadrados
+ * e a projeta `daysAhead` à frente.
+ */
+function fitLine(rows, daysAhead) {
+
+  const n = rows.length;
+
+  if (n < 8) {
+    return null;
+  }
+
+
+  let sumX  = 0;
+  let sumY  = 0;
+  let sumXY = 0;
+  let sumX2 = 0;
+
+
+  for (let i = 0; i < n; i++) {
+
+    const rate = rows[i].rate;
+
+    sumX  += i;
+    sumY  += rate;
+    sumXY += i * rate;
+    sumX2 += i * i;
+
+  }
+
+
+  const denominator =
+    n * sumX2 - sumX * sumX;
+
+  if (denominator === 0) {
+    return null;
+  }
+
+
+  const slope =
+    (n * sumXY - sumX * sumY) / denominator;
+
+  const intercept =
+    (sumY - slope * sumX) / n;
+
+
+  /*
+   * R² indica o quanto a reta explica
+   * a variação real dos dados.
+   * Perto de 1 = tendência consistente.
+   */
+  const meanY = sumY / n;
+
+  let totalVariance    = 0;
+  let residualVariance = 0;
+
+
+  for (let i = 0; i < n; i++) {
+
+    const predicted =
+      intercept + slope * i;
+
+    totalVariance +=
+      (rows[i].rate - meanY) ** 2;
+
+    residualVariance +=
+      (rows[i].rate - predicted) ** 2;
+
+  }
+
+
+  const r2 =
+    totalVariance > 0
+      ? Math.max(
+          0,
+          1 - residualVariance / totalVariance
+        )
+      : 0;
+
+
+  const lastRate =
+    rows[n - 1].rate;
+
+  const projectedRate =
+    intercept + slope * (n - 1 + daysAhead);
+
+
+  /*
+   * Quanto o último preço destoa da reta,
+   * medido em erros-padrão dos resíduos.
+   * Valor alto = a série quebrou e a reta
+   * descreve um regime que acabou.
+   */
+  const standardError =
+    Math.sqrt(
+      residualVariance / Math.max(1, n - 2)
+    );
+
+  const lastPredicted =
+    intercept + slope * (n - 1);
+
+  const deviation =
+    standardError > 0
+      ? Math.abs(lastRate - lastPredicted) / standardError
+      : 0;
+
+
+  return {
+
+    r2,
+
+    deviation,
+
+    projectedRate,
+
+    projectedChange:
+      ((projectedRate - lastRate) / lastRate) * 100,
+
+    samples: n
+
+  };
+
+}
+
+
+/**
+ * Traduz uma reta ajustada em direção.
+ *
+ * R² baixo significa que a reta não descreve
+ * os dados — o preço só oscilou. Projetar a
+ * partir dela viraria sinal falso, que
+ * confirmaria indevidamente o motor histórico.
+ */
+function directionOf(fit) {
+
+  if (!fit || fit.r2 < MIN_R2) {
+    return "stable";
+  }
+
+  if (fit.projectedChange < -NEUTRAL_THRESHOLD) {
+    return "down";
+  }
+
+  if (fit.projectedChange > NEUTRAL_THRESHOLD) {
+    return "up";
+  }
+
+  return "stable";
+
+}
+
+
+/**
+ * Projeta a cotação futura por regressão
+ * linear sobre o histórico recente.
+ *
+ * Serve como segundo motor de análise,
+ * independente da posição histórica.
+ *
+ * Uma reta única sobre uma série que dobra
+ * fica refém dos dados anteriores à dobra:
+ * medindo uma reversão real, a reta de 60
+ * pregões levava 35 dias para perceber, e
+ * nos 15 primeiros afirmava a direção velha
+ * com confiança alta — ativamente errada.
+ * Por isso comparamos uma janela curta com a
+ * longa: quando discordam, a tendência está
+ * virando e nenhuma direção é afirmada.
+ */
+export function calculateForecast(
+  history,
+  daysAhead = 30
+) {
+
+  const sorted =
+    history
+      .filter(item =>
+        item &&
+        typeof item.date === "string" &&
+        typeof item.rate === "number" &&
+        Number.isFinite(item.rate) &&
+        item.rate > 0
+      )
+      .sort(
+        (a, b) =>
+          a.date.localeCompare(b.date)
+      );
+
+
+  if (sorted.length < 10) {
+    return null;
+  }
+
+
+  const longFit =
+    fitLine(
+      sorted.slice(-LONG_WINDOW),
+      daysAhead
+    );
+
+  if (!longFit) {
+    return null;
+  }
+
+
+  const shortFit =
+    fitLine(
+      sorted.slice(-SHORT_WINDOW),
+      daysAhead
+    );
+
+
+  const longDirection  = directionOf(longFit);
+  const shortDirection = directionOf(shortFit);
+
+
+  let confidence;
+
+  if (longFit.r2 >= 0.60) {
+
+    confidence = "alta";
+
+  } else if (longFit.r2 >= MIN_R2) {
+
+    confidence = "média";
+
+  } else {
+
+    confidence = "baixa";
+
+  }
+
+
+  let direction;
+  let label;
+  let icon;
+
+
+  /*
+   * A série quebrou: o último preço fugiu da
+   * reta longa. O regime que a reta descreve
+   * acabou, então a direção dela não vale mais.
+   */
+  const broken =
+    longFit.deviation > MAX_DEVIATION;
+
+
+  const turning =
+    broken ||
+    (
+      longDirection  !== "stable" &&
+      shortDirection !== "stable" &&
+      longDirection  !== shortDirection
+    );
+
+
+  if (turning) {
+
+    direction = "turning";
+    label     = "Tendência virando";
+    icon      = "🔄";
+
+  } else {
+
+    /*
+     * A janela longa é a única que afirma
+     * direção. A curta serve só de gatilho
+     * de reversão, acima.
+     *
+     * Deixar a curta decidir sozinha quando a
+     * longa está indecisa reintroduz o sinal
+     * falso: 15 pregões de uma série lateral
+     * são localmente uma reta com R² alto, e
+     * a oscilação virava "tende a subir".
+     */
+    direction = longDirection;
+
+
+    if (direction === "down") {
+
+      label = "Tende a cair";
+      icon  = "📉";
+
+    } else if (direction === "up") {
+
+      label = "Tende a subir";
+      icon  = "📈";
+
+    } else {
+
+      label = "Sem tendência clara";
+      icon  = "➡️";
+
+    }
+
+  }
+
+
+  return {
+
+    projectedRate:
+      longFit.projectedRate,
+
+    projectedChange:
+      longFit.projectedChange,
+
+    direction,
+
+    label,
+
+    icon,
+
+    r2: longFit.r2,
+
+    confidence,
+
+    turning,
+
+    broken,
+
+    deviation: longFit.deviation,
+
+    longDirection,
+
+    shortDirection,
+
+    daysAhead,
+
+    samples: longFit.samples
+
+  };
+
+}
+
+
+/**
+ * Cruza os dois motores de análise.
+ *
+ * Motor 1: posição histórica (onde o preço está)
+ * Motor 2: projeção linear   (para onde aponta)
+ *
+ * Concordância entre eles aumenta a confiança
+ * da decisão.
+ */
+export function combineEngines(
+  decision,
+  forecast
+) {
+
+  if (!forecast) {
+
+    return {
+      agreement: "unknown",
+      icon: "ℹ️",
+      message:
+        "Previsão indisponível — usando só o histórico"
+    };
+
+  }
+
+
+  const cheapNow =
+    decision.historicalZone === "very-favorable" ||
+    decision.historicalZone === "favorable";
+
+
+  const expensiveNow =
+    decision.historicalZone === "expensive" ||
+    decision.historicalZone === "very-expensive";
+
+
+  /*
+   * TENDÊNCIA VIRANDO
+   *
+   * As janelas curta e longa discordam: a
+   * direção antiga já não vale e a nova ainda
+   * não se firmou. Afirmar qualquer rumo aqui
+   * seria repetir o erro que a detecção existe
+   * para evitar.
+   */
+  if (forecast.direction === "turning") {
+
+    if (cheapNow) {
+
+      return {
+        agreement: "mixed",
+        icon: "🔄",
+        message:
+          "Preço bom, mas a tendência está virando — " +
+          "se for comprar, compre em partes"
+      };
+
+    }
+
+    if (expensiveNow) {
+
+      return {
+        agreement: "mixed",
+        icon: "🔄",
+        message:
+          "Preço alto e tendência virando — " +
+          "acompanhe antes de decidir"
+      };
+
+    }
+
+    return {
+      agreement: "mixed",
+      icon: "🔄",
+      message:
+        "Tendência virando — aguarde o rumo se firmar"
+    };
+
+  }
+
+
+  const fallingAhead =
+    forecast.direction === "down";
+
+  const risingAhead =
+    forecast.direction === "up";
+
+
+  /*
+   * PREÇO BARATO HOJE
+   */
+
+  if (cheapNow) {
+
+    if (fallingAhead) {
+
+      return {
+        agreement: "buy",
+        icon: "✅",
+        message:
+          "Os dois motores concordam: bom momento para comprar"
+      };
+
+    }
+
+    if (risingAhead) {
+
+      return {
+        agreement: "mixed",
+        icon: "⚠️",
+        message:
+          "Preço bom agora, mas a projeção aponta alta — " +
+          "considere comprar em partes"
+      };
+
+    }
+
+    return {
+      agreement: "buy",
+      icon: "✅",
+      message:
+        "Preço bom e estável — momento favorável"
+    };
+
+  }
+
+
+  /*
+   * PREÇO CARO HOJE
+   */
+
+  if (expensiveNow) {
+
+    if (fallingAhead) {
+
+      return {
+        agreement: "mixed",
+        icon: "🟡",
+        message:
+          "Ainda caro, mas a projeção aponta queda — " +
+          "vale esperar"
+      };
+
+    }
+
+    if (risingAhead) {
+
+      return {
+        agreement: "wait",
+        icon: "⛔",
+        message:
+          "Os dois motores concordam: não é hora de comprar"
+      };
+
+    }
+
+    return {
+      agreement: "wait",
+      icon: "⛔",
+      message:
+        "Preço alto e sem sinal de queda — aguarde"
+    };
+
+  }
+
+
+  /*
+   * PREÇO NA MÉDIA
+   */
+
+  if (fallingAhead) {
+
+    return {
+      agreement: "mixed",
+      icon: "🟡",
+      message:
+        "Preço mediano, mas a projeção aponta queda — " +
+        "pode melhorar"
+    };
+
+  }
+
+  if (risingAhead) {
+
+    return {
+      agreement: "wait",
+      icon: "🟠",
+      message:
+        "Preço mediano e a projeção aponta alta — aguarde"
+    };
+
+  }
+
+  return {
+    agreement: "neutral",
+    icon: "➡️",
+    message:
+      "Preço mediano, sem tendência clara"
+  };
+
+}
+
 
 /**
  * Gera a decisão final do Radar.

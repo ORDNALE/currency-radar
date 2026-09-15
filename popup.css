@@ -149,192 +149,277 @@ body {
   font-size: 30px;
 }
 
-/* ESTATÍSTICAS */
+/* MÍNIMA E MÁXIMA POR PERÍODO */
 
-.analysis {
+.ranges {
+  padding-top: 12px;
+
+  border-top: 1px solid #eee;
+
+  display: grid;
+
+  grid-template-columns: auto 1fr 1fr;
+
+  gap: 6px 10px;
+
+  align-items: center;
+}
+
+.ranges-head {
+  font-size: 8px;
+  color: #999;
+
+  text-align: right;
+}
+
+.ranges-label {
+  font-size: 9px;
+  color: #777;
+}
+
+.ranges-value {
+  font-size: 12px;
+
+  text-align: right;
+
+  white-space: nowrap;
+}
+
+/* ========================= */
+/* DOIS MOTORES DE ANÁLISE   */
+/* ========================= */
+
+.engines-section {
+  margin-top: 14px;
+
   padding-top: 12px;
 
   border-top: 1px solid #eee;
 }
 
-.main-stats {
+.engines-title {
+  margin-bottom: 8px;
+
+  font-size: 9px;
+  color: #777;
+}
+
+.engines-row {
   display: grid;
 
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: 1fr 1fr;
 
   gap: 7px;
 }
 
-.analysis div {
+.engines-row.single {
+  grid-template-columns: 1fr;
+}
+
+/* display:flex/grid dos blocos anularia o atributo hidden */
+.engine-block[hidden],
+.combined-signal[hidden] {
+  display: none;
+}
+
+.engine-block {
   display: flex;
 
   flex-direction: column;
-
-  gap: 3px;
-
-  min-width: 0;
-}
-
-.analysis span {
-  font-size: 8px;
-  color: #777;
-}
-
-.analysis strong {
-  font-size: 11px;
-}
-
-/* PERCENTIS */
-
-.percentiles {
-  margin-top: 13px;
-
-  padding-top: 11px;
-
-  border-top: 1px solid #eee;
-}
-
-.percentile-title {
-  margin-bottom: 8px;
-
-  font-size: 9px;
-  color: #777;
-}
-
-.percentile-values {
-  display: grid;
-
-  grid-template-columns: repeat(5, 1fr);
 
   gap: 4px;
-}
-
-.percentile-values > div {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 3px;
 
   min-width: 0;
+}
 
-  padding: 5px 2px;
-
-  border-radius: 5px;
-
-  background: #f5f5f5;
+.engine-label {
+  font-size: 8px;
+  color: #999;
 
   text-align: center;
-}
-
-.percentile-values span {
-  font-size: 8px;
-  color: #777;
-}
-
-.percentile-values strong {
-  font-size: 10px;
-}
-
-.percentile-highlight {
-  background: #eeeeee !important;
-}
-
-/* TENDÊNCIA */
-
-.trend {
-  margin-top: 13px;
-
-  padding-top: 11px;
-
-  border-top: 1px solid #eee;
-}
-
-.trend-title {
-  margin-bottom: 8px;
-
-  font-size: 9px;
-  color: #777;
-}
-
-.trend-values {
-  display: grid;
-
-  grid-template-columns: repeat(2, 1fr);
-
-  gap: 6px;
-}
-
-.trend-values > div {
-  display: flex;
-
-  flex-direction: column;
-
-  gap: 3px;
-
-  padding: 7px;
-
-  border-radius: 5px;
-
-  background: #f5f5f5;
-
-  text-align: center;
-}
-
-.trend-values span {
-  font-size: 8px;
-  color: #777;
-}
-
-.trend-values strong {
-  font-size: 11px;
-}
-
-/* DECISÃO SUGERIDA */
-
-.decision-section {
-  margin-top: 14px;
-}
-
-.decision-title {
-  margin-bottom: 7px;
-
-  font-size: 9px;
-  color: #777;
 }
 
 .opportunity {
-  padding: 11px;
+  flex: 1;
+
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  padding: 9px 6px;
 
   border-radius: 7px;
 
   text-align: center;
 
-  font-size: 12px;
+  font-size: 10px;
 
   font-weight: bold;
 
   background: #eee;
 
   white-space: pre-line;
+
+  line-height: 1.45;
 }
 
-/* INDICADOR DE TENDÊNCIA */
+/* MOTOR 2 — PREVISÃO */
 
-.trend-label {
-  margin-bottom: 8px;
+.forecast-card {
+  flex: 1;
 
-  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 
-  border-radius: 5px;
+  gap: 3px;
 
-  background: #f5f5f5;
+  padding: 9px 6px;
+
+  border-radius: 7px;
+
+  background: #eee;
 
   text-align: center;
+}
 
-  font-size: 11px;
+.forecast-label {
+  font-size: 10px;
+  font-weight: bold;
+
+  line-height: 1.45;
+}
+
+.forecast-rate {
+  font-size: 9px;
+
+  opacity: 0.85;
+}
+
+.forecast-confidence {
+  font-size: 8px;
+
+  opacity: 0.6;
+}
+
+.forecast-card.forecast-down {
+  background: #d4edda;
+  color: #155724;
+}
+
+.forecast-card.forecast-stable {
+  background: #eef1f4;
+  color: #41505e;
+}
+
+.forecast-card.forecast-turning {
+  background: #fff9db;
+  color: #5f4600;
+}
+
+.forecast-card.forecast-up {
+  background: #fde8e8;
+  color: #7b1d1d;
+}
+
+/* VEREDITO COMBINADO */
+
+.combined-signal {
+  margin-top: 9px;
+
+  padding: 9px 10px;
+
+  border-radius: 7px;
+
+  background: #eee;
+
+  font-size: 10px;
 
   font-weight: bold;
+
+  line-height: 1.5;
+
+  text-align: center;
+}
+
+.combined-signal.signal-buy {
+  background: #d4edda;
+  color: #155724;
+}
+
+.combined-signal.signal-mixed {
+  background: #fff9db;
+  color: #5f4600;
+}
+
+.combined-signal.signal-wait {
+  background: #fde8e8;
+  color: #7b1d1d;
+}
+
+.combined-signal.signal-neutral,
+.combined-signal.signal-unknown {
+  background: #eef1f4;
+  color: #41505e;
+}
+
+/* CONSENSO DE MERCADO (FOCUS / BCB) */
+
+.focus-block {
+  margin-top: 9px;
+
+  padding: 9px 10px;
+
+  border: 1px solid #e3e6ea;
+  border-radius: 7px;
+
+  background: #fafbfc;
+}
+
+.focus-title {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+
+  gap: 6px;
+
+  font-size: 9px;
+  font-weight: bold;
+  color: #555;
+}
+
+.focus-source {
+  font-size: 8px;
+  font-weight: normal;
+  color: #aaa;
+
+  white-space: nowrap;
+}
+
+.focus-main {
+  margin-top: 5px;
+
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.focus-main.focus-up {
+  color: #7b1d1d;
+}
+
+.focus-main.focus-down {
+  color: #155724;
+}
+
+.focus-main.focus-flat {
+  color: #41505e;
+}
+
+.focus-detail {
+  margin-top: 3px;
+
+  font-size: 9px;
+  color: #888;
 }
 
 /* ========================= */
@@ -460,6 +545,32 @@ body {
 
 .alert-btn-save:hover {
   background: #0044cc;
+}
+
+.alert-suggest {
+  display: block;
+
+  width: 100%;
+
+  margin-top: 6px;
+  padding: 5px 7px;
+
+  background: #f0f4ff;
+
+  border: 1px dashed #b9caff;
+  border-radius: 6px;
+
+  font-size: 10px;
+  color: #3355bb;
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.alert-suggest:hover {
+  background: #e4ecff;
+  border-color: #8fa9ff;
 }
 
 .alert-btn-remove {

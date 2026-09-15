@@ -7,6 +7,22 @@ const API_URL =
 const PROXIMITY_MARGIN = 0.03;
 const PROXIMITY_COOLDOWN_HOURS = 6;
 
+/*
+ * QUEDA RELEVANTE — independente da meta.
+ *
+ * Os avisos acima são todos relativos ao alvo. Quem
+ * define um alvo bem abaixo do mercado (5,50 com o
+ * euro a 5,94) fica cego: uma queda forte para 5,70
+ * é movimento que interessa, mas não atinge a meta
+ * nem entra na margem de proximidade.
+ *
+ * -1,0% num dia foi medido em 3 anos de PTAX: dispara
+ * ~1 vez por mês no EUR e ~1,2 no USD. A -0,8% seria
+ * quase o dobro, e a -1,5% passaria trimestres calado.
+ */
+const DROP_PERCENT = -1.0;
+const DROP_COOLDOWN_HOURS = 20;
+
 
 chrome.runtime.onInstalled.addListener(() => {
 
@@ -52,13 +68,14 @@ chrome.runtime.onMessage.addListener((msg, _sender, sendResponse) => {
  * igual a sites de Pomodoro. Quando o Chrome estiver
  * minimizado, a barra de tarefas também pisca.
  */
-function openAlertTab(type, currency, rate, targetPrice) {
+function openAlertTab(type, currency, rate, targetPrice, extra = {}) {
 
   const query = new URLSearchParams({
     type,
     currency,
     rate:   rate.toFixed(4),
-    target: targetPrice.toFixed(2)
+    target: targetPrice.toFixed(2),
+    ...extra
   });
 
   chrome.tabs.create({
@@ -165,6 +182,53 @@ async function checkAlerts() {
           };
 
           changed = true;
+
+        }
+
+
+      } else {
+
+        /*
+         * Longe da meta, mas caiu forte hoje.
+         * Vale avisar: pode não continuar caindo.
+         */
+        const todayChange =
+          Number(data[`${currency}BRL`]?.pctChange);
+
+
+        if (
+          Number.isFinite(todayChange) &&
+          todayChange <= DROP_PERCENT
+        ) {
+
+          const lastMs = alert.dropNotifiedAt
+            ? new Date(alert.dropNotifiedAt).getTime()
+            : 0;
+
+          const hoursSince =
+            (Date.now() - lastMs) / 3_600_000;
+
+
+          if (hoursSince >= DROP_COOLDOWN_HOURS) {
+
+            openAlertTab(
+              "drop",
+              currency,
+              rate,
+              alert.targetPrice,
+              { change: todayChange.toFixed(2) }
+            );
+
+
+            alerts[currency] = {
+              ...alert,
+              dropNotifiedAt: new Date().toISOString(),
+              dropRate: rate
+            };
+
+            changed = true;
+
+          }
 
         }
 

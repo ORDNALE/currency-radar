@@ -11,8 +11,17 @@ import {
   calculateTrend,
   analyzeOpportunity,
   analyzeRadar,
-  analyzeDecision
+  analyzeDecision,
+  calculateForecast,
+  combineEngines,
+  calculateRanges,
+  suggestAlertTarget
 } from "./services/analysis.js";
+
+import {
+  getFocusForecast,
+  projectFromFocus
+} from "./services/focus.js";
 
 
 const currencies = {
@@ -34,6 +43,19 @@ const currencies = {
 
 let selectedCurrency = "EUR";
 
+/*
+ * Preço-alvo sugerido por moeda.
+ *
+ * A oportunidade pode aparecer amanhã ou daqui a
+ * meses, e o alerta só pega se já estiver armado —
+ * mas ele exigia que o usuário inventasse um número.
+ * Aqui a própria análise propõe um.
+ */
+const suggestedTarget = {
+  EUR: null,
+  USD: null
+};
+
 
 /**
  * Formatação apenas para apresentação.
@@ -53,25 +75,6 @@ function formatBRL(value) {
       maximumFractionDigits: 4
     }
   ).format(value);
-
-}
-
-
-/**
- * Formata uma variação percentual.
- */
-function formatPercent(value) {
-
-  if (!Number.isFinite(value)) {
-    return "--";
-  }
-
-  const sign =
-    value > 0
-      ? "+"
-      : "";
-
-  return `${sign}${value.toFixed(2)}%`;
 
 }
 
@@ -153,7 +156,7 @@ function formatDecision(
 
 
   const differenceText =
-    `${Math.abs(difference).toFixed(2)}%`;
+    `${Math.abs(difference).toFixed(1)}%`;
 
 
   let averageText;
@@ -172,44 +175,220 @@ function formatDecision(
   } else {
 
     averageText =
-      "igual à média";
-
-  }
-
-
-  /*
-   * Texto da tendência.
-   */
-  let trendText;
-
-
-  if (
-    decision.trendDirection === "down"
-  ) {
-
-    trendText =
-      "📉 tendência de queda";
-
-  } else if (
-    decision.trendDirection === "up"
-  ) {
-
-    trendText =
-      "📈 tendência de alta";
-
-  } else {
-
-    trendText =
-      "➡️ tendência estável";
+      "na média";
 
   }
 
 
   return (
     `${decision.icon} ${decision.action}\n` +
-    `${decision.detail}\n` +
-    `${trendText} • ${averageText}`
+    `${averageText}`
   );
+
+}
+
+
+function isForecastSilent(forecast) {
+
+  return (
+    !forecast ||
+    forecast.direction === "stable"
+  );
+
+}
+
+
+/**
+ * Renderiza o card do motor de previsão.
+ */
+function renderForecast(forecast) {
+
+  const card =
+    document.getElementById("forecast-card");
+
+  const label =
+    document.getElementById("forecast-label");
+
+  const rate =
+    document.getElementById("forecast-rate");
+
+  const confidence =
+    document.getElementById("forecast-confidence");
+
+
+  const block =
+    document.getElementById("forecast-block");
+
+  const row =
+    document.getElementById("engines-row");
+
+
+  if (!card || !label || !rate || !confidence || !block || !row) {
+    return;
+  }
+
+
+  /*
+   * Sem tendência (o caso da maioria dos dias)
+   * o card não tem nada a dizer — some, e o
+   * card da esquerda ocupa a linha.
+   */
+  const silent =
+    isForecastSilent(forecast);
+
+  block.hidden = silent;
+
+  row.classList.toggle("single", silent);
+
+  if (silent) {
+    return;
+  }
+
+
+  card.className =
+    `forecast-card forecast-${forecast.direction}`;
+
+
+  label.textContent =
+    `${forecast.icon} ${forecast.label}`;
+
+
+  /*
+   * Tendência virando: a reta longa ainda
+   * aponta o rumo antigo, que já não vale.
+   * Projetar a partir dela enganaria.
+   */
+  if (forecast.direction === "turning") {
+
+    rate.textContent = "";
+
+    confidence.textContent =
+      "rumo mudando, ainda sem confirmar";
+
+    return;
+
+  }
+
+
+  rate.textContent =
+    `${formatBRL(forecast.projectedRate)} em 30d`;
+
+
+  confidence.textContent =
+    `confiança ${forecast.confidence}`;
+
+}
+
+
+/**
+ * Renderiza o veredito do cruzamento
+ * entre os dois motores.
+ */
+function renderCombinedSignal(combined) {
+
+  const element =
+    document.getElementById("combined-signal");
+
+  if (!element) {
+    return;
+  }
+
+
+  element.hidden = false;
+
+  element.className =
+    `combined-signal signal-${combined.agreement}`;
+
+
+  element.textContent =
+    `${combined.icon} ${combined.message}`;
+
+}
+
+
+/**
+ * Renderiza o consenso do Focus/BCB.
+ *
+ * É informação adicional: some sem alarde quando
+ * indisponível, e nunca entra no veredito dos dois
+ * motores — o Focus projeta meses à frente, os
+ * motores falam do agora.
+ */
+function renderFocus(projection, currency) {
+
+  const block =
+    document.getElementById("focus-block");
+
+  const main =
+    document.getElementById("focus-main");
+
+  const detail =
+    document.getElementById("focus-detail");
+
+
+  if (!block || !main || !detail) {
+    return;
+  }
+
+
+  if (!projection) {
+
+    block.hidden = true;
+
+    return;
+
+  }
+
+
+  block.hidden = false;
+
+
+  const [month, year] =
+    projection.referenceMonth.split("/");
+
+  const monthNames = [
+    "jan", "fev", "mar", "abr", "mai", "jun",
+    "jul", "ago", "set", "out", "nov", "dez"
+  ];
+
+  const when =
+    `${monthNames[Number(month) - 1]}/${year.slice(2)}`;
+
+
+  main.className =
+    `focus-main focus-${projection.direction}`;
+
+
+  /*
+   * A leitura útil não é a data futura, é o que ela
+   * implica para hoje: se o mercado espera alta,
+   * adiar a compra tende a sair mais caro.
+   */
+  const advice =
+    projection.direction === "up"
+      ? "↑ Esperar tende a sair mais caro"
+      : projection.direction === "down"
+        ? "↓ Esperar tende a compensar"
+        : "→ Esperar não deve mudar muito";
+
+
+  main.textContent = advice;
+
+
+  const diff =
+    Math.abs(projection.changePercent).toFixed(1);
+
+
+  const movement =
+    projection.direction === "flat"
+      ? "estável"
+      : `${projection.direction === "up" ? "+" : "−"}${diff}%`;
+
+
+  detail.textContent =
+    `Mercado projeta ${formatBRL(projection.projected)} ` +
+    `até ${when} (${movement}) · ` +
+    `${projection.respondents} instituições`;
 
 }
 
@@ -326,6 +505,16 @@ async function loadCurrency() {
 
 
     /*
+     * Segundo motor: projeção linear
+     * dos próximos 30 dias.
+     */
+    const forecast =
+      calculateForecast(
+        history
+      );
+
+
+    /*
      * COTAÇÃO
      */
 
@@ -363,34 +552,27 @@ async function loadCurrency() {
      * ESTATÍSTICAS
      */
 
+    const ranges =
+      calculateRanges(history);
+
+
+    suggestedTarget[selectedCurrency] =
+      suggestAlertTarget(current.rate);
+
+
     const statisticsMap = {
 
-      "currency-average":
-        statistics.average,
+      "range-month-min":
+        ranges?.month?.min,
 
-      "currency-median":
-        statistics.median,
+      "range-month-max":
+        ranges?.month?.max,
 
-      "currency-min":
-        statistics.min,
+      "range-six-min":
+        ranges?.sixMonths?.min,
 
-      "currency-max":
-        statistics.max,
-
-      "currency-p10":
-        statistics.p10,
-
-      "currency-p25":
-        statistics.p25,
-
-      "currency-p50":
-        statistics.p50,
-
-      "currency-p75":
-        statistics.p75,
-
-      "currency-p90":
-        statistics.p90
+      "range-six-max":
+        ranges?.sixMonths?.max
 
     };
 
@@ -419,54 +601,7 @@ async function loadCurrency() {
 
 
     /*
-     * TENDÊNCIA
-     */
-
-    const trendLabel =
-      document.getElementById(
-        "currency-trend-label"
-      );
-
-    if (trendLabel) {
-
-      trendLabel.textContent =
-        `${trend.icon} ${trend.label}`;
-
-    }
-
-
-    const trend7 =
-      document.getElementById(
-        "currency-trend-7d"
-      );
-
-    if (trend7) {
-
-      trend7.textContent =
-        formatPercent(
-          trend.change7d
-        );
-
-    }
-
-
-    const trend30 =
-      document.getElementById(
-        "currency-trend-30d"
-      );
-
-    if (trend30) {
-
-      trend30.textContent =
-        formatPercent(
-          trend.change30d
-        );
-
-    }
-
-
-    /*
-     * DECISÃO SUGERIDA
+     * MOTOR 1 — POSIÇÃO HISTÓRICA
      */
 
     const opportunityElement =
@@ -486,6 +621,73 @@ async function loadCurrency() {
         `opportunity zone-${decision.historicalZone}`;
 
     }
+
+
+    /*
+     * MOTOR 2 — PREVISÃO
+     */
+
+    renderForecast(forecast);
+
+
+    /*
+     * VEREDITO COMBINADO
+     */
+
+    renderCombinedSignal(
+      combineEngines(
+        decision,
+        forecast
+      )
+    );
+
+
+    /*
+     * Sem tendência o veredito só repetiria o
+     * card da esquerda ("Preço mediano, sem
+     * tendência clara") — some junto.
+     */
+    const combinedElement =
+      document.getElementById("combined-signal");
+
+    if (combinedElement) {
+
+      combinedElement.hidden =
+        isForecastSilent(forecast);
+
+    }
+
+
+    /*
+     * CONSENSO DE MERCADO
+     *
+     * Buscado depois do render principal, não junto:
+     * é complemento, e não deve atrasar a tela se o
+     * servidor do BCB estiver lento.
+     */
+    const requestedCurrency = selectedCurrency;
+
+    getFocusForecast().then(focus => {
+
+      /*
+       * O usuário pode ter trocado de aba durante a
+       * consulta — descartar resultado fora de contexto.
+       */
+      if (selectedCurrency !== requestedCurrency) {
+        return;
+      }
+
+      renderFocus(
+        projectFromFocus(
+          focus,
+          requestedCurrency,
+          current.rate,
+          marketRates.USD?.rate
+        ),
+        requestedCurrency
+      );
+
+    });
 
 
     updateAlertUI(selectedCurrency);
@@ -516,7 +718,8 @@ async function loadCurrency() {
         trend,
         opportunity,
         radar,
-        decision
+        decision,
+        forecast
       }
     );
 
@@ -544,17 +747,10 @@ async function loadCurrency() {
     const elements = [
 
       "currency-rate",
-      "currency-average",
-      "currency-median",
-      "currency-min",
-      "currency-max",
-      "currency-p10",
-      "currency-p25",
-      "currency-p50",
-      "currency-p75",
-      "currency-p90",
-      "currency-trend-7d",
-      "currency-trend-30d",
+      "range-month-min",
+      "range-month-max",
+      "range-six-min",
+      "range-six-max",
       "currency-today-change"
 
     ];
@@ -579,19 +775,6 @@ async function loadCurrency() {
     );
 
 
-    const trendLabel =
-      document.getElementById(
-        "currency-trend-label"
-      );
-
-    if (trendLabel) {
-
-      trendLabel.textContent =
-        "Tendência indisponível";
-
-    }
-
-
     const opportunityElement =
       document.getElementById(
         "currency-opportunity"
@@ -603,9 +786,20 @@ async function loadCurrency() {
         "opportunity";
 
       opportunityElement.textContent =
-        "Análise indisponível";
+        "Indisponível";
 
     }
+
+
+    renderForecast(null);
+
+    renderCombinedSignal({
+      agreement: "unknown",
+      icon: "⚠️",
+      message: "Análise indisponível"
+    });
+
+    renderFocus(null);
 
     updateAlertUI(selectedCurrency);
 
@@ -871,6 +1065,40 @@ async function updateAlertUI(currency) {
       priceInput.value = "";
     }
 
+
+    const suggest =
+      document.getElementById("alert-suggest");
+
+    const target =
+      suggestedTarget[currency];
+
+    if (suggest) {
+
+      if (target) {
+
+        suggest.hidden = false;
+
+        /*
+         * Descreve o que o número é, não o que ele
+         * vai fazer: prometer "boa compra" soa como
+         * garantia, e alvo nenhum tem garantia.
+         */
+        suggest.textContent =
+          `💡 Sugestão: R$ ` +
+          `${target.price.toFixed(2).replace(".", ",")} — ` +
+          `${target.discountPercent.toFixed(0)}% abaixo de hoje`;
+
+        suggest.dataset.price =
+          target.price.toFixed(2);
+
+      } else {
+
+        suggest.hidden = true;
+
+      }
+
+    }
+
   }
 
 }
@@ -938,6 +1166,25 @@ function initAlertListeners() {
     await updateAlertUI(selectedCurrency);
 
   });
+
+
+  const suggestBtn =
+    document.getElementById("alert-suggest");
+
+  if (suggestBtn) {
+
+    suggestBtn.addEventListener("click", () => {
+
+      const price = suggestBtn.dataset.price;
+
+      if (price) {
+        priceInput.value = price;
+        priceInput.focus();
+      }
+
+    });
+
+  }
 
 
   const checkBtn =
